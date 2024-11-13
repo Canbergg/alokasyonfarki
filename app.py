@@ -65,15 +65,19 @@ if uploaded_files and cardproduct_file:
     st.write("Article Category Summary")
     st.dataframe(category_summary)
 
-    # Summary for Article_Family
-    family_summary = combined_df.groupby('ARTICLE_FAMILY').agg({
+    # Filter for Article_Family summary based on selected Article_Category
+    selected_category = st.selectbox("Select Category for Family Summary", combined_df['ARTICLE_CATEGORY'].unique())
+    filtered_combined_df = combined_df[combined_df['ARTICLE_CATEGORY'] == selected_category]
+
+    # Summary for Article_Family with category filter
+    family_summary = filtered_combined_df.groupby('ARTICLE_FAMILY').agg({
         'QTY_HOST': 'sum',
         'QTY_GRANTED': 'sum',
         'QTY_DEFFERENCE': 'sum'
     }).reset_index()
     family_summary['GRANT_HOST_RATIO'] = family_summary['QTY_GRANTED'] / family_summary['QTY_HOST']
 
-    st.write("Article Family Summary")
+    st.write(f"Article Family Summary for Category: {selected_category}")
     st.dataframe(family_summary)
 
     # Create a button to download summaries and combined data as Excel
