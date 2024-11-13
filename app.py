@@ -8,8 +8,17 @@ st.title("SKU Data Aggregation and Analysis Tool")
 cardproduct_file = st.file_uploader("Upload Cardproduct File", type=["xlsx"])
 if cardproduct_file:
     cardproduct_df = pd.read_excel(cardproduct_file)
-    cardproduct_df.columns = ['Ürün Kodu', 'Ürün Adı', 'ARTICLE_FAMILY', 'ARTICLE_CATEGORY']
-    cardproduct_df = cardproduct_df.rename(columns={'Ürün Kodu': 'ARTICLE_CODE'})
+    
+    # Check if the cardproduct file has the expected number of columns
+    expected_columns = ['Ürün Kodu', 'Ürün Adı', 'ARTICLE_FAMILY', 'ARTICLE_CATEGORY']
+    if len(cardproduct_df.columns) == len(expected_columns):
+        # Rename columns to match expected names
+        cardproduct_df.columns = expected_columns
+        cardproduct_df = cardproduct_df.rename(columns={'Ürün Kodu': 'ARTICLE_CODE'})
+    else:
+        st.error(f"Cardproduct dosyasında beklenmeyen bir sütun sayısı var. Beklenen sütun sayısı {len(expected_columns)}, "
+                 f"ama dosyada {len(cardproduct_df.columns)} sütun bulundu. Lütfen dosyayı kontrol edin.")
+        st.stop()  # Stop the app if columns are incorrect
 
 # Step 2: Upload multiple data files
 uploaded_files = st.file_uploader("Upload Data Files to Merge", type=["xlsx"], accept_multiple_files=True)
@@ -33,6 +42,13 @@ if uploaded_files and cardproduct_file:
     # Perform VLOOKUP-like operation to add ARTICLE_CATEGORY and ARTICLE_FAMILY based on ARTICLE_CODE
     combined_df = combined_df.merge(cardproduct_df[['ARTICLE_CODE', 'ARTICLE_CATEGORY', 'ARTICLE_FAMILY']],
                                     on='ARTICLE_CODE', how='left')
+
+    # Check if ARTICLE_CATEGORY and ARTICLE_FAMILY columns are present after merging
+    missing_columns = [col for col in ['ARTICLE_CATEGORY', 'ARTICLE_FAMILY'] if col not in combined_df.columns]
+    if missing_columns:
+        st.error(f"Birleştirme işlemi sonrasında şu sütunlar bulunamadı: {', '.join(missing_columns)}. "
+                 "Lütfen 'cardproduct' dosyasındaki 'ARTICLE_CODE' değerlerinin doğruluğunu kontrol edin.")
+        st.stop()
 
     # Display combined data
     st.write("Combined Data")
@@ -65,8 +81,9 @@ if uploaded_files and cardproduct_file:
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         category_summary.to_excel(writer, sheet_name='Category Summary', index=False)
         family_summary.to_excel(writer, sheet_name='Family Summary', index=False)
-        writer.save()
-        processed_data = output.getvalue()
+        # 'with' block handles closing the writer, so no need to call writer.save()
+
+    processed_data = output.getvalue()
 
     st.download_button(
         label="Download Summary as Excel",
