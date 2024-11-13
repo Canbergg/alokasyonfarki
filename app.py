@@ -76,18 +76,20 @@ if uploaded_files and cardproduct_file:
     st.write("Article Family Summary")
     st.dataframe(family_summary)
 
-    # Create a button to download summaries as Excel
+    # Create a button to download summaries and combined data as Excel
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        # Write each DataFrame to a separate sheet
+        combined_df.to_excel(writer, sheet_name='Combined Data', index=False)
         category_summary.to_excel(writer, sheet_name='Category Summary', index=False)
         family_summary.to_excel(writer, sheet_name='Family Summary', index=False)
-        # 'with' block handles closing the writer, so no need to call writer.save()
+        # 'with' block handles closing the writer
 
     processed_data = output.getvalue()
 
     st.download_button(
-        label="Download Summary as Excel",
+        label="Download Summary and Combined Data as Excel",
         data=processed_data,
-        file_name="summary_data.xlsx",
+        file_name="summary_and_combined_data.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
