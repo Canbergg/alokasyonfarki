@@ -43,6 +43,12 @@ if uploaded_files and cardproduct_file:
     combined_df = combined_df.merge(cardproduct_df[['ARTICLE_CODE', 'ARTICLE_CATEGORY', 'ARTICLE_FAMILY']],
                                     on='ARTICLE_CODE', how='left')
 
+    # Check for missing rows after merging
+    missing_rows = combined_df[combined_df['ARTICLE_CATEGORY'].isna() | combined_df['ARTICLE_FAMILY'].isna()]
+    if not missing_rows.empty:
+        st.write("Rows with missing ARTICLE_CATEGORY or ARTICLE_FAMILY due to unmatched ARTICLE_CODE:")
+        st.dataframe(missing_rows)
+
     # Check if ARTICLE_CATEGORY and ARTICLE_FAMILY columns are present after merging
     missing_columns = [col for col in ['ARTICLE_CATEGORY', 'ARTICLE_FAMILY'] if col not in combined_df.columns]
     if missing_columns:
